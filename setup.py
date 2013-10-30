@@ -11,7 +11,8 @@ from setuptools import setup, find_packages, Extension
 ext_modules = [
     Extension(
         'atom.catom',
-        ['atom/src/atomlist.cpp',
+        ['atom/src/alias.cpp',
+         'atom/src/atomlist.cpp',
          #'atom/src/atomdict.cpp',
          'atom/src/atomref.cpp',
          'atom/src/catom.cpp',
