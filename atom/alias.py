@@ -52,12 +52,14 @@ class StaticAliasObserver(object):
         owner = change['object']
         name = self.name
         alias = owner.get_member(name)
-        handler = alias.get_slot(owner)
-        if handler is not None:
-            handler.obref = None
+        observer = alias.get_slot(owner)
+        if observer is not None:
+            observer.obref = None
         if isinstance(new, CAtom):
             obref = atomref(owner)
-            new.observe(alias.attr, DynamicAliasObserver(name, obref))
+            observer = DynamicAliasObserver(name, obref)
+            new.observe(alias.attr, observer)
+            alias.set_slot(owner, observer)
 
 
 class Alias(Member):
