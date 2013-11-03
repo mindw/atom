@@ -16,7 +16,6 @@
 #include "atomlist.h"
 //#include "atomdict.h"
 #include "enumtypes.h"
-#include "alias.h"
 
 using namespace PythonHelpers;
 
@@ -51,8 +50,6 @@ initcatom( void )
     //    return;
     if( import_enumtypes() < 0 )
         return;
-    if( import_alias() < 0 )
-        return;
 
     Py_INCREF( &Member_Type );
     Py_INCREF( &CAtom_Type );
@@ -60,7 +57,6 @@ initcatom( void )
     Py_INCREF( &AtomList_Type );
     Py_INCREF( &AtomCList_Type );
     //Py_INCREF( &AtomDict_Type );
-    Py_INCREF( &Alias_Type );
     Py_INCREF( PyGetAttr );
     Py_INCREF( PySetAttr );
     Py_INCREF( PyDelAttr );
@@ -75,7 +71,6 @@ initcatom( void )
     PyModule_AddObject( mod, "atomlist", pyobject_cast( &AtomList_Type ) );
     PyModule_AddObject( mod, "atomclist", pyobject_cast( &AtomCList_Type ) );
     //PyModule_AddObject( mod, "atomdict", pyobject_cast( &AtomDict_Type ) );
-    PyModule_AddObject( mod, "Alias", pyobject_cast( &Alias_Type ) );
     PyModule_AddObject( mod, "GetAttr", PyGetAttr );
     PyModule_AddObject( mod, "SetAttr", PySetAttr );
     PyModule_AddObject( mod, "DelAttr", PyDelAttr );
