@@ -55,9 +55,9 @@ public:
 
     Py_ssize_t py_sizeof()
     {
-        Py_ssize_t size = sizeof( ModifyGuard<ObserverPool>* );
-        size += sizeof( std::vector<Topic> ) + sizeof( Topic ) * m_topics.capacity();
-        size += sizeof( std::vector<PyObjectPtr> ) + sizeof( PyObjectPtr ) * m_observers.capacity();
+        Py_ssize_t size = sizeof( ObserverPool );
+        size += sizeof( Topic ) * m_topics.capacity();
+        size += sizeof( PyObjectPtr ) * m_observers.capacity();
         return size;
     };
 
@@ -76,10 +76,10 @@ public:
 
 private:
 
-    ModifyGuard<ObserverPool>* m_modify_guard;
-    std::vector<Topic> m_topics;
-    std::vector<PyObjectPtr> m_observers;
     ObserverPool(const ObserverPool& other);
     ObserverPool& operator=(const ObserverPool&);
 
+    std::vector<Topic> m_topics;
+    std::vector<PyObjectPtr> m_observers;
+    ModifyGuard<ObserverPool>* m_modify_guard;
 };
