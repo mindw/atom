@@ -252,22 +252,25 @@ class AtomMeta(type):
         # with multiple inheritance where the indices of multiple base
         # classes will overlap. When this happens, the members which
         # conflict must be cloned in order to occupy a unique index.
+        storage_index = 0
         conflicts = []
-        occupied = set()
-        for member in members.itervalues():
-            if member.index in occupied:
-                conflicts.append(member)
+        storagemembers = []
+        for sm in members.itervalues():
+            if sm.needs_storage:
+                storagemembers.append(sm)
+        storagemembers.sort(key=lambda m: m.index)
+        for sm in storagemembers:
+            if sm.index == storage_index:
+                storage_index += 1
             else:
-                occupied.add(member.index)
-
-        resolved_index = len(occupied)
-        for member in conflicts:
-            clone = member.clone()
-            clone.set_index(resolved_index)
+                conflicts.append(sm)
+        for sm in conflicts:
+            clone = sm.clone()
+            clone.set_index(storage_index)
+            storage_index += 1
             owned_members.add(clone)
             members[clone.name] = clone
             setattr(cls, clone.name, clone)
-            resolved_index += 1
 
         # Walk the dict a second time to collect the class members. This
         # assigns the name and the index to the member. If a member is
@@ -282,11 +285,21 @@ class AtomMeta(type):
                 if key in members:
                     supermember = members[key]
                     members[key] = value
-                    value.set_index(supermember.index)
+                    # member may have been blown away by line 273
+                    if supermember in owned_members:
+                        setattr(cls, key, value)
                     value.copy_static_observers(supermember)
+                    if value.needs_storage:
+                        value.set_index(supermember.index)
+                    else:
+                        value.set_index(-1)
                 else:
-                    value.set_index(len(members))
                     members[key] = value
+                    if value.needs_storage:
+                        value.set_index(storage_index)
+                        storage_index += 1
+                    else:
+                        value.set_index(-1)
 
         # Add the special statically defined behaviors for the members.
         # If the target member is defined on a subclass, it is cloned
@@ -367,9 +380,10 @@ class AtomMeta(type):
                         observer = ExtendedObserver(observer, attr)
                     member.add_static_observer(observer)
 
-        # Put a reference to the members dict on the class. This is used
-        # by CAtom to query for the members and member count as needed.
+        # Put a reference to the members dict and strorage count on the
+        # class. These are used by the c++ atom code for various things.
         cls.__atom_members__ = members
+        cls.__storage_count__ = storage_index
 
         return cls
 

@@ -18,32 +18,33 @@ using namespace PythonHelpers;
 
 
 static PyObject* atom_members;
+static PyObject* storage_count;
 
 
 static PyObject*
 CAtom_new( PyTypeObject* type, PyObject* args, PyObject* kwargs )
 {
-    PyDictPtr membersptr( PyObject_GetAttr( pyobject_cast( type ), atom_members ) );
-    if( !membersptr )
+    PyObjectPtr countptr( PyObject_GetAttr( pyobject_cast( type ), storage_count ) );
+    if( !countptr )
         return 0;
-    if( !membersptr.check_exact() )
-        return py_bad_internal_call( "atom members" );
+    if( !PyInt_Check( countptr.get() ) )
+        return py_bad_internal_call( "storge count" );
     PyObjectPtr selfptr( PyType_GenericNew( type, args, kwargs ) );
     if( !selfptr )
         return 0;
     CAtom* atom = catom_cast( selfptr.get() );
-    uint32_t count = static_cast<uint32_t>( membersptr.size() );
+    long count = PyInt_AS_LONG( countptr.get() );
     if( count > 0 )
     {
-        if( count > MAX_MEMBER_COUNT )
+        if( static_cast<uint32_t>( count ) > MAX_MEMBER_COUNT )
             return py_type_fail( "too many members" );
-        size_t size = sizeof( PyObject* ) * count;
+        size_t size = sizeof( PyObject* ) * static_cast<size_t>( count );
         void* slots = PyObject_MALLOC( size );
         if( !slots )
             return PyErr_NoMemory();
         memset( slots, 0, size );
         atom->slots = reinterpret_cast<PyObject**>( slots );
-        atom->set_slot_count( count );
+        atom->set_slot_count( static_cast<uint32_t>( count ) );
     }
     atom->set_notifications_enabled( true );
     return selfptr.release();
@@ -370,6 +371,9 @@ import_catom()
         return -1;
     atom_members = PyString_FromString( "__atom_members__" );
     if( !atom_members )
+        return -1;
+    storage_count = PyString_FromString( "__storage_count__" );
+    if( !storage_count )
         return -1;
     return 0;
 }
