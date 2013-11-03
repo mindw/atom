@@ -332,6 +332,7 @@ Member_clone( Member* self )
     Member* clone = member_cast( pyclone );
     clone->modes = self->modes;
     clone->index = self->index;
+    clone->flags = self->flags;
     clone->name = newref( self->name );
     if( self->metadata )
         clone->metadata = PyDict_Copy( self->metadata );
