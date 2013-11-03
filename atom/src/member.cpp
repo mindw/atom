@@ -29,6 +29,7 @@ Member_new( PyTypeObject* type, PyObject* args, PyObject* kwargs )
     member->set_getattr_mode( GetAttr::Slot );
     member->set_setattr_mode( SetAttr::Slot );
     member->set_delattr_mode( DelAttr::Slot );
+    member->set_needs_storage( true );
     return selfptr.release();
 }
 
@@ -396,6 +397,26 @@ Member_set_index( Member* self, PyObject* value )
 }
 
 
+static PyObject*
+Member_get_needs_storage( Member* self, void* context )
+{
+    return newref( self->needs_storage() ? Py_True : Py_False );
+}
+
+
+static PyObject*
+Member_set_needs_storage( Member* self, PyObject* value )
+{
+    if( value == Py_True )
+        self->set_needs_storage( true );
+    else if( value == Py_False )
+        self->set_needs_storage( false );
+    else
+        return py_expected_type_fail( value, "bool" );
+    Py_RETURN_NONE;
+}
+
+
 template<typename T> bool
 parse_mode_and_context( PyObject* args, PyObject** context, T& mode )
 {
@@ -744,6 +765,8 @@ Member_getset[] = {
       "Get and set the metadata for the member." },
     { "index", ( getter )Member_get_index, 0,
       "Get the index to which the member is bound" },
+    { "needs_storage", ( getter )Member_get_needs_storage, 0,
+      "Get whether or not the member needs storage space" },
     { "getattr_mode", ( getter )Member_get_getattr_mode, 0,
       "Get the getattr mode for the member." },
     { "setattr_mode", ( getter )Member_get_setattr_mode, 0,
@@ -770,6 +793,8 @@ Member_methods[] = {
       "Set the name to which the member is bound. Use with extreme caution!" },
     { "set_index", ( PyCFunction )Member_set_index, METH_O,
       "Set the index to which the member is bound. Use with extreme caution!" },
+    { "set_needs_storage", ( PyCFunction )Member_set_needs_storage, METH_O,
+      "Set whether or not the member needs storage space. Use with extreme caution!" },
     { "get_slot", ( PyCFunction )Member_get_slot, METH_O,
       "Get the atom's slot value directly." },
     { "set_slot", ( PyCFunction )Member_set_slot, METH_VARARGS,

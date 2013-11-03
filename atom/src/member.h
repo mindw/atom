@@ -62,6 +62,19 @@ struct Member
             flags &= ~MEMBER_ALIAS_BIT;
     }
 
+    bool needs_storage()
+    {
+        return bool( flags & MEMBER_STORAGE_BIT );
+    }
+
+    void set_needs_storage( bool on )
+    {
+        if( on )
+            flags |= MEMBER_STORAGE_BIT;
+        else
+            flags &= ~MEMBER_STORAGE_BIT;
+    }
+
     GetAttr::Mode get_getattr_mode()
     {
         return static_cast<GetAttr::Mode>( modes & 0xff );
