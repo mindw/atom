@@ -7,6 +7,7 @@
 |----------------------------------------------------------------------------*/
 #pragma clang diagnostic ignored "-Wdeprecated-writable-strings"
 #pragma GCC diagnostic ignored "-Wwrite-strings"
+#include <limits>
 #include "member.h"
 #include "enumtypes.h"
 #include "packagenaming.h"
@@ -374,6 +375,8 @@ Member_set_name( Member* self, PyObject* value )
 static PyObject*
 Member_get_index( Member* self, void* context )
 {
+    if( self->index == std::numeric_limits<uint32_t>::max() )
+        return PyInt_FromSsize_t( static_cast<Py_ssize_t>( -1 ) );
     return PyInt_FromSsize_t( static_cast<Py_ssize_t>( self->index ) );
 }
 
@@ -386,7 +389,9 @@ Member_set_index( Member* self, PyObject* value )
     Py_ssize_t index = PyInt_AsSsize_t( value );
     if( index < 0 && PyErr_Occurred() )
         return 0;
-    self->index = static_cast<uint32_t>( index < 0 ? 0 : index );
+    self->index = static_cast<uint32_t>(
+        index < 0 ? std::numeric_limits<uint32_t>::max() : index
+    );
     Py_RETURN_NONE;
 }
 

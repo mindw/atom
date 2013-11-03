@@ -19,6 +19,7 @@
 #endif
 
 #define MEMBER_ALIAS_BIT ( static_cast<uint32_t>( 0x1 ) )
+#define MEMBER_STORAGE_BIT ( static_cast<uint32_t>( 0x2 ) )
 #define member_cast( o ) ( reinterpret_cast<Member*>( o ) )
 
 
