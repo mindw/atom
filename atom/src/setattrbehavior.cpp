@@ -24,6 +24,28 @@ Member::check_context( SetAttr::Mode mode, PyObject* context )
                 return false;
             }
             break;
+        case SetAttr::Proxy:
+            if( !PyTuple_CheckExact( context ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( PyTuple_GET_SIZE( context ) != 2 )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( !PyString_Check( PyTuple_GET_ITEM( context, 0 ) ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( !PyString_Check( PyTuple_GET_ITEM( context, 1 ) ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            break;
         case SetAttr::CallObject_ObjectValue:
         case SetAttr::CallObject_ObjectNameValue:
             if( !PyCallable_Check( context ) )
@@ -234,6 +256,26 @@ delegate_handler( Member* member, CAtom* atom, PyObject* value )
 
 
 static int
+proxy_handler( Member* member, CAtom* atom, PyObject* value )
+{
+    PyObject* name = PyTuple_GET_ITEM( member->getattr_context, 0 );
+    PyObject* attr = PyTuple_GET_ITEM( member->getattr_context, 1 );
+    PyObjectPtr other( PyObject_GetAttr( pyobject_cast( atom ), name ) );
+    if( !other )
+        return -1;
+    return PyObject_SetAttr( other.get(), attr, value );
+}
+
+
+static int
+proxy_disallow_handler( Member* member, CAtom* atom, PyObject* value )
+{
+    py_type_fail( "cannot set the value of a non-writable proxy" );
+    return -1;
+}
+
+
+static int
 call_object_object_value_handler( Member* member, CAtom* atom, PyObject* value )
 {
     PyObjectPtr valueptr( newref( value ) );
@@ -347,6 +389,8 @@ handlers[] = {
     event_handler,
     signal_handler,
     delegate_handler,
+    proxy_handler,
+    proxy_disallow_handler,
     call_object_object_value_handler,
     call_object_object_name_value_handler,
     object_method_value_handler,

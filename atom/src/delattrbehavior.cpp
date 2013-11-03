@@ -24,6 +24,28 @@ Member::check_context( DelAttr::Mode mode, PyObject* context )
                 return false;
             }
             break;
+        case DelAttr::Proxy:
+            if( !PyTuple_CheckExact( context ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( PyTuple_GET_SIZE( context ) != 2 )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( !PyString_Check( PyTuple_GET_ITEM( context, 0 ) ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( !PyString_Check( PyTuple_GET_ITEM( context, 1 ) ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            break;
         default:
             break;
     }
@@ -131,6 +153,26 @@ delegate_handler( Member* member, CAtom* atom )
 }
 
 
+static int
+proxy_handler( Member* member, CAtom* atom )
+{
+    PyObject* name = PyTuple_GET_ITEM( member->getattr_context, 0 );
+    PyObject* attr = PyTuple_GET_ITEM( member->getattr_context, 1 );
+    PyObjectPtr other( PyObject_GetAttr( pyobject_cast( atom ), name ) );
+    if( !other )
+        return -1;
+    return PyObject_SetAttr( other.get(), attr, 0 );
+}
+
+
+static int
+proxy_disallow_handler( Member* member, CAtom* atom )
+{
+    py_type_fail( "cannot delete the value of a non-writable proxy" );
+    return -1;
+}
+
+
 typedef int
 ( *handler )( Member* member, CAtom* atom );
 
@@ -143,7 +185,9 @@ handlers[] = {
     read_only_handler,
     event_handler,
     signal_handler,
-    delegate_handler
+    delegate_handler,
+    proxy_handler,
+    proxy_disallow_handler
 };
 
 

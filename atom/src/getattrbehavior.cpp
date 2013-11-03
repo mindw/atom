@@ -26,6 +26,28 @@ Member::check_context( GetAttr::Mode mode, PyObject* context )
                 return false;
             }
             break;
+        case GetAttr::Proxy:
+            if( !PyTuple_CheckExact( context ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( PyTuple_GET_SIZE( context ) != 2 )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( !PyString_Check( PyTuple_GET_ITEM( context, 0 ) ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            if( !PyString_Check( PyTuple_GET_ITEM( context, 1 ) ) )
+            {
+                py_expected_type_fail( context, "2-tuple of str" );
+                return false;
+            }
+            break;
         case GetAttr::CallObject_Object:
         case GetAttr::CallObject_ObjectName:
             if( !PyCallable_Check( context ) )
@@ -142,6 +164,25 @@ delegate_handler( Member* member, CAtom* atom )
 
 
 static PyObject*
+proxy_handler( Member* member, CAtom* atom )
+{
+    PyObject* name = PyTuple_GET_ITEM( member->getattr_context, 0 );
+    PyObject* attr = PyTuple_GET_ITEM( member->getattr_context, 1 );
+    PyObjectPtr other( PyObject_GetAttr( pyobject_cast( atom ), name ) );
+    if( !other )
+        return 0;
+    return PyObject_GetAttr( other.get(), attr );
+}
+
+
+static PyObject*
+proxy_disallow_handler( Member* member, CAtom* atom )
+{
+    return py_type_fail( "cannot get the value of a non-readable proxy" );
+}
+
+
+static PyObject*
 call_object_object_handler( Member* member, CAtom* atom )
 {
     PyObjectPtr callable( newref( member->getattr_context ) );
@@ -233,6 +274,8 @@ handlers[] = {
     event_handler,
     signal_handler,
     delegate_handler,
+    proxy_handler,
+    proxy_disallow_handler,
     call_object_object_handler,
     call_object_object_name_handler,
     object_method_handler,
