@@ -9,9 +9,10 @@ import copy_reg
 from contextlib import contextmanager
 from types import FunctionType
 
+from .alias import Alias, StaticAliasObserver
 from .catom import (
     CAtom, Member, DefaultValue, PostGetAttr, PostSetAttr, Validate,
-    PostValidate,
+    PostValidate
 )
 
 
@@ -110,6 +111,9 @@ class set_default(object):
 class ExtendedObserver(object):
     """ A callable object used to implement extended observers.
 
+    This class is an implementation detail of the framework, it should
+    not be used directly by user code.
+
     """
     __slots__ = ('funcname', 'attr')
 
@@ -185,6 +189,7 @@ class AtomMeta(type):
         # declared on the class only serve as sentinels, and they are
         # removed from the dict before creating the class.
         funcs = []                  # Methods defined on the class
+        aliases = []                # Observable aliases defined on the class
         observes = []               # Static observer methods: _observe_*
         defaults = []               # Default value methods: _default_*
         validates = []              # Validator methods: _validate_*
@@ -226,6 +231,8 @@ class AtomMeta(type):
                     post_getattrs.append(key)
                 elif key.startswith(POST_SETATTR_PREFIX):
                     post_setattrs.append(key)
+            if isinstance(value, Alias) and value.observable:
+                aliases.append(value)
 
         # Remove the sentinels from the dict before creating the class.
         # The sentinels for the @observe decorators are already removed.
@@ -313,6 +320,14 @@ class AtomMeta(type):
                 setattr(cls, m.name, m)
             return m
 
+        # Static alias observers
+        for alias in aliases:
+            target = alias.target
+            if target in members:
+                member = clone_if_needed(members[target])
+                observer = StaticAliasObserver(alias.name)
+                member.add_static_observer(observer)
+
         # set_default() sentinels
         for sd in set_defaults:
             if sd.name not in members:
@@ -377,6 +392,9 @@ class AtomMeta(type):
                     member = clone_if_needed(members[name])
                     observer = handler.funcname
                     if attr is not None:
+                        if isinstance(member, Alias):
+                            msg = "cannot observe '%s.%s', '%s' is an alias"
+                            raise TypeError(msg % (name, attr, name))
                         observer = ExtendedObserver(observer, attr)
                     member.add_static_observer(observer)
 
