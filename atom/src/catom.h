@@ -18,6 +18,7 @@
 #define NOTIFICATION_BIT ( static_cast<uint32_t>( 1 << 16 ) )
 #define GUARD_BIT ( static_cast<uint32_t>( 1 << 17 ) )
 #define ATOMREF_BIT ( static_cast<uint32_t>( 1 << 18 ) )
+#define ALIAS_BIT ( static_cast<uint32_t>( 1 << 19 ) )
 #define catom_cast( o ) ( reinterpret_cast<CAtom*>( o ) )
 
 
@@ -91,6 +92,19 @@ struct CAtom
             bitfield |= ATOMREF_BIT;
         else
             bitfield &= ~ATOMREF_BIT;
+    }
+
+    bool alias_guard()
+    {
+        return bool( bitfield & ALIAS_BIT );
+    }
+
+    void set_alias_guard( bool on )
+    {
+        if( on )
+            bitfield |= ALIAS_BIT;
+        else
+            bitfield &= ~ALIAS_BIT;
     }
 
     bool has_observers( PyObject* topic )

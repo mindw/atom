@@ -18,6 +18,7 @@
 #define UINT64_C( c ) ( c ## ULL )
 #endif
 
+#define MEMBER_ALIAS_BIT ( static_cast<uint32_t>( 0x1 ) )
 #define member_cast( o ) ( reinterpret_cast<Member*>( o ) )
 
 
@@ -29,6 +30,7 @@ struct Member
     PyObject_HEAD
     uint64_t modes;
     uint32_t index;
+    uint32_t flags;
     PyObject* name;
     PyObject* metadata;
     PyObject* getattr_context;
@@ -45,6 +47,19 @@ struct Member
     // ModifyGuard template interface
     ModifyGuard<Member>* get_modify_guard() { return modify_guard; }
     void set_modify_guard( ModifyGuard<Member>* guard ) { modify_guard = guard; }
+
+    bool alias_guard()
+    {
+        return bool( flags & MEMBER_ALIAS_BIT );
+    }
+
+    void set_alias_guard( bool on )
+    {
+        if( on )
+            flags |= MEMBER_ALIAS_BIT;
+        else
+            flags &= ~MEMBER_ALIAS_BIT;
+    }
 
     GetAttr::Mode get_getattr_mode()
     {
