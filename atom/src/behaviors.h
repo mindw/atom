@@ -18,8 +18,7 @@ enum Mode
     Event,
     Signal,
     Delegate,
-    Proxy,
-    ProxyDisallow,
+    Alias,
     CallObject_Object,
     CallObject_ObjectName,
     ObjectMethod,
@@ -59,8 +58,7 @@ enum Mode
     Event,
     Signal,
     Delegate,
-    Proxy,
-    ProxyDisallow,
+    Alias,
     CallObject_ObjectValue,
     CallObject_ObjectNameValue,
     ObjectMethod_Value,
@@ -175,8 +173,7 @@ enum Mode
     Event,
     Signal,
     Delegate,
-    Proxy,
-    ProxyDisallow,
+    Alias,
     Last // sentinel
 };
 

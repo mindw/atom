@@ -5,6 +5,7 @@
 |
 | The full license is in the file COPYING.txt, distributed with this software.
 |----------------------------------------------------------------------------*/
+#include "aliasguard.h"
 #include "member.h"
 #include "memberchange.h"
 
@@ -24,7 +25,7 @@ Member::check_context( SetAttr::Mode mode, PyObject* context )
                 return false;
             }
             break;
-        case SetAttr::Proxy:
+        case SetAttr::Alias:
             if( !PyTuple_CheckExact( context ) )
             {
                 py_expected_type_fail( context, "2-tuple of str" );
@@ -256,22 +257,20 @@ delegate_handler( Member* member, CAtom* atom, PyObject* value )
 
 
 static int
-proxy_handler( Member* member, CAtom* atom, PyObject* value )
+alias_handler( Member* member, CAtom* atom, PyObject* value )
 {
+    if( AliasGuard::guarded( member, atom ) )
+    {
+        py_runtime_fail( "alias recursion detected" );
+        return -1;
+    }
+    AliasGuard guard( member, atom );
     PyObject* name = PyTuple_GET_ITEM( member->getattr_context, 0 );
     PyObject* attr = PyTuple_GET_ITEM( member->getattr_context, 1 );
     PyObjectPtr other( PyObject_GetAttr( pyobject_cast( atom ), name ) );
     if( !other )
         return -1;
     return PyObject_SetAttr( other.get(), attr, value );
-}
-
-
-static int
-proxy_disallow_handler( Member* member, CAtom* atom, PyObject* value )
-{
-    py_type_fail( "cannot set the value of a non-writable proxy" );
-    return -1;
 }
 
 
@@ -389,8 +388,7 @@ handlers[] = {
     event_handler,
     signal_handler,
     delegate_handler,
-    proxy_handler,
-    proxy_disallow_handler,
+    alias_handler,
     call_object_object_value_handler,
     call_object_object_name_value_handler,
     object_method_value_handler,
